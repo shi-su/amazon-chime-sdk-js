@@ -75,6 +75,13 @@ export default class SetRemoteDescriptionTask extends BaseTask {
       sdp = new DefaultSDP(sdp).preferH264IfExists().sdp;
     }
 
+    if (this.context.videoUplinkBandwidthPolicy.chooseVideoCodecPreferences) {
+        const preferences = this.context.videoUplinkBandwidthPolicy.chooseVideoCodecPreferences();
+        if (preferences.length > 0) {
+            sdp = new DefaultSDP(sdp).withVideoSendCodecPreferences(preferences).sdp;
+        }
+    }
+
     this.logger.info(`processed remote description is >>>${sdp}<<<`);
     const remoteDescription: RTCSessionDescription = {
       type: 'answer',

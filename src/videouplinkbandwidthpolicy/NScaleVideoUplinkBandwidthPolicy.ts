@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import VideoCodecCapability from '../sdp/VideoCodecCapability';
 import Logger from '../logger/Logger';
 import TransceiverController from '../transceivercontroller/TransceiverController';
 import DefaultVideoAndEncodeParameter from '../videocaptureandencodeparameter/DefaultVideoCaptureAndEncodeParameter';
@@ -51,6 +52,8 @@ export default class NScaleVideoUplinkBandwidthPolicy implements VideoUplinkBand
   private hasBandwidthPriority: boolean = false;
   private encodingParamMap = new Map<string, RTCRtpEncodingParameters>();
   private transceiverController: TransceiverController;
+  private videoCodecPreferences: VideoCodecCapability[] = [];
+  private wantsResubscribeForVideoCodecPreferenceChange = false;
 
   constructor(
     private selfAttendeeId: string,
@@ -107,7 +110,7 @@ export default class NScaleVideoUplinkBandwidthPolicy implements VideoUplinkBand
   }
 
   wantsResubscribe(): boolean {
-    return !this.parametersInEffect.equal(this.optimalParameters);
+    return this.wantsResubscribeForVideoCodecPreferenceChange || !this.parametersInEffect.equal(this.optimalParameters);
   }
 
   chooseCaptureAndEncodeParameters(): DefaultVideoAndEncodeParameter {
@@ -218,5 +221,15 @@ export default class NScaleVideoUplinkBandwidthPolicy implements VideoUplinkBand
 
   private getStreamCaptureSetting(): MediaTrackSettings | undefined {
     return this.transceiverController?.localVideoTransceiver()?.sender?.track?.getSettings();
+  }
+
+  setVideoCodecPreferences(preferences: VideoCodecCapability[]): void {
+    this.videoCodecPreferences = preferences;
+    this.wantsResubscribeForVideoCodecPreferenceChange = true;
+  }
+
+  chooseVideoCodecPreferences(): VideoCodecCapability[] {
+    this.wantsResubscribeForVideoCodecPreferenceChange = false;
+    return this.videoCodecPreferences;
   }
 }

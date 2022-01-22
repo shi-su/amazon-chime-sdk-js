@@ -75,6 +75,9 @@ import {
   BackgroundFilterSpec,
   BackgroundFilterPaths,
   ModelSpecBuilder,
+  VideoCodecCapability,
+  DefaultSimulcastUplinkPolicy,
+  NScaleVideoUplinkBandwidthPolicy,
 } from 'amazon-chime-sdk-js';
 
 import TestSound from './audio/TestSound';
@@ -288,6 +291,7 @@ export class DemoMeetingApp
   // feature flags
   enableWebAudio = false;
   logLevel = LogLevel.INFO;
+  preferredVideoCodec: VideoCodecCapability | undefined = undefined;
   enableSimulcast = false;
   usePriorityBasedDownlinkPolicy = false;
   videoPriorityBasedPolicyConfig = VideoPriorityBasedPolicyConfig.Default;
@@ -610,6 +614,28 @@ export class DemoMeetingApp
           break;
         default:
           this.logLevel = LogLevel.OFF;
+          break;
+      }
+
+      const chosenVideoSendCodec = (document.getElementById('videoCodecSelect') as HTMLSelectElement).value;
+      switch (chosenVideoSendCodec) {
+        case 'vp8':
+          this.preferredVideoCodec = VideoCodecCapability.vp8();
+          break;
+        case 'h264ConstrainedBaselineProfile':
+          this.preferredVideoCodec = VideoCodecCapability.h264ConstrainedBaselineProfile();
+          break;
+        case 'vp9Profile0':
+          this.preferredVideoCodec = VideoCodecCapability.vp9Profile0();
+          break;
+        case 'vp9Profile1':
+          this.preferredVideoCodec = VideoCodecCapability.vp9Profile1();
+          break;
+        case 'vp9Profile2':
+          this.preferredVideoCodec = VideoCodecCapability.vp9Profile2();
+          break;
+        case 'av1MainProfile':
+          this.preferredVideoCodec = VideoCodecCapability.av1MainProfile();
           break;
       }
 
@@ -1612,12 +1638,27 @@ export class DemoMeetingApp
     if (!isNaN(timeoutMs)) {
       configuration.attendeePresenceTimeoutMs = Number(timeoutMs);
     }
-    configuration.enableSimulcastForUnifiedPlanChromiumBasedBrowsers = this.enableSimulcast;
     if (this.usePriorityBasedDownlinkPolicy) {
       this.priorityBasedDownlinkPolicy = new VideoPriorityBasedPolicy(this.meetingLogger, this.videoPriorityBasedPolicyConfig);
       configuration.videoDownlinkBandwidthPolicy = this.priorityBasedDownlinkPolicy;
       this.priorityBasedDownlinkPolicy.addObserver(this);
     }
+
+    // Always set the uplink policy, in case we need to set codec preferences
+    if (this.enableSimulcast) {
+        configuration.enableSimulcastForUnifiedPlanChromiumBasedBrowsers = true;
+        configuration.videoUplinkBandwidthPolicy = new DefaultSimulcastUplinkPolicy(
+            configuration.credentials.attendeeId,
+            this.meetingLogger
+        );
+    } else {
+        configuration.videoUplinkBandwidthPolicy = new NScaleVideoUplinkBandwidthPolicy(
+            configuration.credentials.attendeeId,
+            this.defaultBrowserBehaviour.disableResolutionScaleDown(),
+            this.meetingLogger
+        );
+    }
+    configuration.videoUplinkBandwidthPolicy.setVideoCodecPreferences([this.preferredVideoCodec]);
     configuration.applicationMetadata = ApplicationMetadata.create('amazon-chime-sdk-js-demo', '2.0.0');
 
     if ((document.getElementById('pause-last-frame') as HTMLInputElement).checked) {

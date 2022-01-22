@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import VideoCodecCapability from './VideoCodecCapability';
 import SDPCandidateType from './SDPCandidateType';
 
 /**
@@ -89,4 +90,16 @@ export default interface SDP {
    * List of directions of video sections in order.
    */
   videoSectionDirections(): RTCRtpTransceiverDirection[];
+
+  /**
+   * Based off the provided preferences, this function will:
+   *   * Reorder the `a=rtpmap` lines so it matches `preferences`. Note they may no longer be grouped with their feedback, which is allowed.
+   *   * Reorder the payload types listed in the `m=video` line.
+   * 
+   * This will be applied to the `a=sendrecv` section so it can be applied on either local or remote SDPs. It can be used to 
+   * 'polyfill' `RTCRtpSender.setCodecPreferences' on the local side, but it can also be used on remote SDPs to force the
+   * codec actually being send, since the send codec is currently dependent on the remote answer (i.e. `setCodecPreferences` doesn't actually
+   * have any impact unless the remote side respects the order of codecs, which would require signaling to be backwards compatible).
+   */
+  withVideoSendCodecPreferences(preferences: VideoCodecCapability[]): SDP;
 }

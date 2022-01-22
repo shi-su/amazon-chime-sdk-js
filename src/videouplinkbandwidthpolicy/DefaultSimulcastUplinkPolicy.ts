@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import VideoCodecCapability from '../sdp/VideoCodecCapability';
 import Logger from '../logger/Logger';
 import SimulcastLayers from '../simulcastlayers/SimulcastLayers';
 import SimulcastTransceiverController from '../transceivercontroller/SimulcastTransceiverController';
@@ -50,6 +51,8 @@ export default class DefaultSimulcastUplinkPolicy implements SimulcastUplinkPoli
   private currLocalDescriptions: VideoStreamDescription[] = [];
   private nextLocalDescriptions: VideoStreamDescription[] = [];
   private activeStreamsToPublish: ActiveStreams;
+  private videoCodecPreferences: VideoCodecCapability[] = [];
+  private wantsResubscribeForVideoCodecPreferenceChange = false;
   private observerQueue: Set<SimulcastUplinkObserver> = new Set<SimulcastUplinkObserver>();
 
   constructor(private selfAttendeeId: string, private logger: Logger) {
@@ -274,7 +277,7 @@ export default class DefaultSimulcastUplinkPolicy implements SimulcastUplinkPoli
     }
 
     this.currLocalDescriptions = this.nextLocalDescriptions;
-    return constraintDiff;
+    return this.wantsResubscribeForVideoCodecPreferenceChange || constraintDiff;
   }
 
   private compareEncodingParameter(
@@ -411,5 +414,15 @@ export default class DefaultSimulcastUplinkPolicy implements SimulcastUplinkPoli
     for (const observer of this.observerQueue) {
       observerFunc(observer);
     }
+  }
+
+  setVideoCodecPreferences(preferences: VideoCodecCapability[]): void {
+    this.videoCodecPreferences = preferences;
+    this.wantsResubscribeForVideoCodecPreferenceChange = true;
+  }
+
+  chooseVideoCodecPreferences(): VideoCodecCapability[] {
+    this.wantsResubscribeForVideoCodecPreferenceChange = false;
+    return this.videoCodecPreferences;
   }
 }

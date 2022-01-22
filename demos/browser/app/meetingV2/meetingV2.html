@@ -58,8 +58,8 @@
         <div class="col-12">
           <fieldset>
             <legend>Choose your optional features</legend>
-            <div class="custom-control" style="text-align: left;">
-              <label for="logLevel">Choose a Log Level:</label>
+            <div class="custom-control">
+              <label for="logLevel">Log Level:</label>
               <select name="logLevel" id="logLevelSelect">
                 <option value="INFO">INFO</option>
                 <option value="DEBUG">DEBUG</option>
@@ -68,6 +68,18 @@
                 <option value="OFF">OFF</option>
               </select>
             </div>
+            <div class="custom-control">
+                <label for="videoCodec">Preferred Video Send Codec:</label>
+                <select name="videoCodec" id="videoCodecSelect">
+                    <option value="default">Meeting Default</option>
+                    <option value="vp8">VP8</option>
+                    <option value="h264ConstrainedBaselineProfile">H.264 Constrained Baseline Profile</option>
+                    <option value="vp9Profile0">VP9 Profile 0</option>
+                    <option value="vp9Profile1">VP9 Profile 1</option>
+                    <option value="vp9Profile2">VP9 Profile 2</option>
+                    <option value="av1MainProfile">AV1 Main Profile</option>
+                </select>
+              </div>
             <div class="custom-control custom-checkbox" style="text-align: left;">
               <input type="checkbox" id="webaudio" class="custom-control-input">
               <label for="webaudio" class="custom-control-label">Use WebAudio</label>

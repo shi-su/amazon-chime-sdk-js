@@ -1,6 +1,7 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+import VideoCodecCapability from '../sdp/VideoCodecCapability';
 import TransceiverController from '../transceivercontroller/TransceiverController';
 import VideoCaptureAndEncodeParameter from '../videocaptureandencodeparameter/VideoCaptureAndEncodeParameter';
 import VideoStreamIndex from '../videostreamindex/VideoStreamIndex';
@@ -43,6 +44,27 @@ export default interface VideoUplinkBandwidthPolicy {
    * Sets whether video uplink bandwidth is currently prioritized.
    */
   setHasBandwidthPriority(hasBandwidthPriority: boolean): void;
+
+  /**
+   * Set codec preferences for this clients send stream in order
+   * of most preferred to least preferred. Note that codecs not chosen
+   * will still be offers at lower priority for fallback purposes 
+   * 
+   * If there is no overlap between what is passed in and what is supported by the browser, this function
+   * may not have any effect, and the default set of codecs for this browser will be used.
+   * 
+   * This will result in `wantsResubscribe` returning `true`, and the
+   * new codec preferences will not take effect until the next negotiation.
+   *
+   * @param Array of [[VideoCodecCapability]].
+   */
+  setVideoCodecPreferences?(preferences: VideoCodecCapability[]): void;
+
+  /**
+   * Returns the preferences set in `setVideoCodecPreferences`. This function
+   * is called internally as the values are used to modify the SDP used in negotiation.
+   */
+  chooseVideoCodecPreferences?(): VideoCodecCapability[];
 
   /**
    * Returns the selected encoding parameter
