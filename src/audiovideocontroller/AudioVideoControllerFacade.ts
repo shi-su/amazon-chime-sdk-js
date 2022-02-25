@@ -46,4 +46,9 @@ export default interface AudioVideoControllerFacade {
    * on the next call to `start` or if already started, upon the next reconnect.
    */
   setAudioProfile(audioProfile: AudioProfile): void;
+
+  /**
+   * Sets the max bandwidth for video publishing
+   */
+  setVideoMaxBandwidthKbps(maxBandwidthKbps: number): void;
 }

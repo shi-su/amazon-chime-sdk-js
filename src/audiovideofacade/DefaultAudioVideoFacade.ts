@@ -354,23 +354,33 @@ export default class DefaultAudioVideoFacade implements AudioVideoFacade {
     return result;
   }
 
-  chooseAudioInputDevice(device: AudioInputDevice): Promise<void> {
-    this.trace('chooseAudioInputDevice', device);
-    return this.deviceController.chooseAudioInputDevice(device);
+  async startAudioInput(device: AudioInputDevice): Promise<MediaStream | undefined> {
+    this.trace('startAudioInputDevice', device);
+    return this.deviceController.startAudioInput(device);
   }
 
-  chooseVideoInputDevice(device: VideoInputDevice): Promise<void> {
+  async stopAudioInput(): Promise<void> {
+    this.trace('stopAudioInputDevice');
+    return this.deviceController.stopAudioInput();
+  }
+
+  async startVideoInput(device: VideoInputDevice): Promise<MediaStream | undefined> {
     if (isVideoTransformDevice(device)) {
       // Don't stringify the device to avoid failures when cyclic object references are present.
-      this.trace('chooseVideoInputDevice with transform device');
+      this.trace('startVideoInputDevice with transform device');
     } else {
-      this.trace('chooseVideoInputDevice', device);
+      this.trace('startVideoInputDevice', device);
     }
-    return this.deviceController.chooseVideoInputDevice(device);
+    return this.deviceController.startVideoInput(device);
   }
 
-  chooseAudioOutputDevice(deviceId: string | null): Promise<void> {
-    const result = this.deviceController.chooseAudioOutputDevice(deviceId);
+  async stopVideoInput(): Promise<void> {
+    this.trace('stopVideoInputDevice');
+    return this.deviceController.stopVideoInput();
+  }
+
+  chooseAudioOutput(deviceId: string | null): Promise<void> {
+    const result = this.deviceController.chooseAudioOutput(deviceId);
     this.trace('chooseAudioOutputDevice', deviceId);
     return result;
   }
@@ -412,19 +422,18 @@ export default class DefaultAudioVideoFacade implements AudioVideoFacade {
     return result;
   }
 
-  chooseVideoInputQuality(
-    width: number,
-    height: number,
-    frameRate: number,
-    maxBandwidthKbps: number
-  ): void {
-    this.deviceController.chooseVideoInputQuality(width, height, frameRate, maxBandwidthKbps);
+  chooseVideoInputQuality(width: number, height: number, frameRate: number): void {
+    this.deviceController.chooseVideoInputQuality(width, height, frameRate);
     this.trace('chooseVideoInputQuality', {
       width: width,
       height: height,
       frameRate: frameRate,
-      maxBandwidthKbps: maxBandwidthKbps,
     });
+  }
+
+  setVideoMaxBandwidthKbps(maxBandwidthKbps: number): void {
+    this.audioVideoController.setVideoMaxBandwidthKbps(maxBandwidthKbps);
+    this.trace('setVideoMaxBandwidthKbps', maxBandwidthKbps);
   }
 
   getVideoInputQualitySettings(): VideoQualitySettings | null {
