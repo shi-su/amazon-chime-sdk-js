@@ -284,6 +284,7 @@ export default class VideoPriorityBasedPolicy implements VideoDownlinkBandwidthP
   protected calculateOptimalReceiveStreams(): void {
     const chosenStreams: VideoStreamDescription[] = [];
     const remoteInfos: VideoStreamDescription[] = this.videoIndex.remoteStreamDescriptions();
+    this.logger.info(`bwe: keepSameSubscriptions stats:${JSON.stringify(this.downlinkStats)}`);
     if (remoteInfos.length === 0 || this.videoPreferences?.isEmpty()) {
       this.optimalReceiveStreams = [];
       return;
@@ -312,7 +313,10 @@ export default class VideoPriorityBasedPolicy implements VideoDownlinkBandwidthP
     // Sort streams by bitrate ascending.
     remoteInfos.sort((a, b) => {
       if (a.maxBitrateKbps === b.maxBitrateKbps) {
-        return a.streamId - b.streamId;
+        if (a.avgBitrateKbps === b.avgBitrateKbps){
+          return a.streamId - b.streamId;
+        }
+        return a.avgBitrateKbps - b.avgBitrateKbps;
       }
       return a.maxBitrateKbps - b.maxBitrateKbps;
     });
@@ -873,7 +877,7 @@ export default class VideoPriorityBasedPolicy implements VideoDownlinkBandwidthP
             if (info.attendeeId === preference.attendeeId) {
               const index = chosenStreams.findIndex(
                 stream =>
-                  stream.groupId === info.groupId && stream.maxBitrateKbps < info.maxBitrateKbps
+                stream.groupId === info.groupId && stream.avgBitrateKbps <= info.avgBitrateKbps && stream.avgBitrateKbps < info.avgBitrateKbps
               );
               if (index !== -1) {
                 const increaseKbps = info.avgBitrateKbps - chosenStreams[index].avgBitrateKbps;
@@ -1024,7 +1028,8 @@ export default class VideoPriorityBasedPolicy implements VideoDownlinkBandwidthP
       `bwe: optimalReceiveSet ${JSON.stringify(optimalReceiveSet)}\n` +
       `bwe:   prev ${JSON.stringify(this.prevDownlinkStats)}\n` +
       `bwe:   now  ${JSON.stringify(this.downlinkStats)}\n` +
-      `bwe:   ${remoteInfoStr}\n`;
+      `bwe:   ${remoteInfoStr}\n` +
+      `DBG_MSG_shisuss\n`;
 
     if (this.pausedStreamIds.size() > 0 || this.pausedBwAttendeeIds.size > 0) {
       logString += `bwe:   paused: app stream ids ${JSON.stringify(
