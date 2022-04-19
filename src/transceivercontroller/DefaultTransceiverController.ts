@@ -138,6 +138,10 @@ export default class DefaultTransceiverController implements TransceiverControll
       this._localCameraTransceiver = this.peer.addTransceiver('video', {
         direction: 'inactive',
         streams: [this.defaultMediaStream],
+        sendEncodings: [
+          // @ts-ignore
+          {scalabilityMode: 'L3T3'},
+        ]
       });
     }
   }

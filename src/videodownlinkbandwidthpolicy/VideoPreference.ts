@@ -36,9 +36,9 @@ export default class VideoPreference implements Eq, PartialOrd {
     return new VideoPreference(this.attendeeId, this.priority, this.targetSize);
   }
 
-  private static readonly LOW_BITRATE_KBPS = 300;
-  private static readonly MID_BITRATE_KBPS = 600;
-  private static readonly HIGH_BITRATE_KBPS = 1200;
+  private static readonly LOW_BITRATE_KBPS = 100;
+  private static readonly MID_BITRATE_KBPS = 300;
+  private static readonly HIGH_BITRATE_KBPS = 1300;
 
   targetSizeToBitrateKbps(targetSize: TargetDisplaySize): number {
     switch (targetSize) {
