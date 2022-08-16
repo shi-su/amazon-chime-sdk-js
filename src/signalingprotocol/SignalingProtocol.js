@@ -7285,6 +7285,22 @@ $root.SdkMetric = (function() {
         case 87:
             message.type = 87;
             break;
+        case "VIDEO_ENCODE_TIME":
+        case 88:
+            message.type = 88;
+            break;
+        case "VIDEO_DECODE_TIME":
+        case 89:
+            message.type = 89;
+            break;
+        case "VIDEO_HW_ENCODER":
+        case 90:
+            message.type = 90;
+            break;
+        case "VIDEO_HW_DECODER":
+        case 91:
+            message.type = 91;
+            break;
         }
         if (object.value != null)
             message.value = Number(object.value);
@@ -7385,6 +7401,10 @@ $root.SdkMetric = (function() {
      * @property {number} VIDEO_RECEIVED_QP_SUM=72 VIDEO_RECEIVED_QP_SUM value
      * @property {number} VIDEO_ENCODE_WIDTH=86 VIDEO_ENCODE_WIDTH value
      * @property {number} VIDEO_DECODE_WIDTH=87 VIDEO_DECODE_WIDTH value
+     * @property {number} VIDEO_ENCODE_TIME=88 VIDEO_ENCODE_TIME value
+     * @property {number} VIDEO_DECODE_TIME=89 VIDEO_DECODE_TIME value
+     * @property {number} VIDEO_HW_ENCODER=90 VIDEO_HW_ENCODER value
+     * @property {number} VIDEO_HW_DECODER=91 VIDEO_HW_DECODER value
      */
     SdkMetric.Type = (function() {
         var valuesById = {}, values = Object.create(valuesById);
@@ -7443,6 +7463,10 @@ $root.SdkMetric = (function() {
         values[valuesById[72] = "VIDEO_RECEIVED_QP_SUM"] = 72;
         values[valuesById[86] = "VIDEO_ENCODE_WIDTH"] = 86;
         values[valuesById[87] = "VIDEO_DECODE_WIDTH"] = 87;
+        values[valuesById[88] = "VIDEO_ENCODE_TIME"] = 88;
+        values[valuesById[89] = "VIDEO_DECODE_TIME"] = 89;
+        values[valuesById[90] = "VIDEO_HW_ENCODER"] = 90;
+        values[valuesById[91] = "VIDEO_HW_DECODER"] = 91;
         return values;
     })();
 

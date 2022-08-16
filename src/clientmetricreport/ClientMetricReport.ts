@@ -126,6 +126,35 @@ export default class ClientMetricReport {
     return Number(metricReport.currentMetrics[metricName] * 1000);
   };
 
+  floatAvgPerSecond = (metricName?: string, ssrc?: number): number => {
+    const metricReport = ssrc ? this.streamMetricReports[ssrc] : this.globalMetricReport;
+    let intervalSeconds = (this.currentTimestampMs - this.previousTimestampMs) / 1000;
+    if (intervalSeconds <= 0) {
+      return 0;
+    }
+    if (this.previousTimestampMs <= 0) {
+      intervalSeconds = 1;
+    }
+    const diff =
+      metricReport.currentMetrics[metricName] - (metricReport.previousMetrics[metricName] || 0);
+    if (diff <= 0) {
+      return 0;
+    }
+    return diff / intervalSeconds;
+  };
+
+  isHardwareImplementation = (metricName?: string, ssrc?: number): number => {
+    const metricReport = this.streamMetricReports[ssrc];
+    const implName = String(metricReport.currentMetrics[metricName]);
+    this.logger.error(
+      '[DEBUG-MSG]Implementation name is ' + implName
+    );
+    const hasHwName = implName.includes('ExternalDecoder') || implName.includes('ExternalEncoder') ||
+      implName.includes('EncodeAccelerator') || implName.includes('DecodeAccelerator');
+    const isFallback = implName.includes('fallback from')
+    return (hasHwName && !isFallback) ? 1 : 0;
+  };
+
   /**
    *  Canonical and derived metric maps
    */
@@ -252,6 +281,8 @@ export default class ClientMetricReport {
     jitter: {
       transform: this.secondsToMilliseconds,
     },
+    totalEncodeTime: { transform: this.floatAvgPerSecond, type: SdkMetric.Type.VIDEO_ENCODE_TIME },
+    encoderImplementation: { transform: this.isHardwareImplementation, type: SdkMetric.Type.VIDEO_HW_ENCODER },
   };
 
   readonly videoDownstreamMetricMap: {
@@ -357,6 +388,11 @@ export default class ClientMetricReport {
     },
     videoUpstreamFramesEncodedPerSecond: {
       source: 'framesEncoded',
+      media: MediaType.VIDEO,
+      dir: Direction.UPSTREAM,
+    },
+    videoUpstreamTotalEncodeTime: {
+      source: 'totalEncodeTime',
       media: MediaType.VIDEO,
       dir: Direction.UPSTREAM,
     },
