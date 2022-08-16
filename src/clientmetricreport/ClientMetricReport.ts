@@ -126,6 +126,11 @@ export default class ClientMetricReport {
     return Number(metricReport.currentMetrics[metricName] * 1000);
   };
 
+  isHardwareImplementation = (metricName?: string, ssrc?: number): number => {
+    // TODO fix this function
+    return 1;
+  };
+
   /**
    *  Canonical and derived metric maps
    */
@@ -252,6 +257,8 @@ export default class ClientMetricReport {
     jitter: {
       transform: this.secondsToMilliseconds,
     },
+    totalEncodeTime: { transform: this.countPerSecond, type: SdkMetric.Type.VIDEO_ENCODE_TIME },
+    encoderImplementation: { transform: this.isHardwareImplementation, type: SdkMetric.Type.VIDEO_HW_ENCODER },
   };
 
   readonly videoDownstreamMetricMap: {
@@ -357,6 +364,11 @@ export default class ClientMetricReport {
     },
     videoUpstreamFramesEncodedPerSecond: {
       source: 'framesEncoded',
+      media: MediaType.VIDEO,
+      dir: Direction.UPSTREAM,
+    },
+    videoUpstreamTotalEncodeTime: {
+      source: 'totalEncodeTime',
       media: MediaType.VIDEO,
       dir: Direction.UPSTREAM,
     },

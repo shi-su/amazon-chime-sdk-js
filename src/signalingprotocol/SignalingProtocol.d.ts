@@ -2747,7 +2747,11 @@ export namespace SdkMetric {
         VIDEO_DECODE_HEIGHT = 69,
         VIDEO_RECEIVED_QP_SUM = 72,
         VIDEO_ENCODE_WIDTH = 86,
-        VIDEO_DECODE_WIDTH = 87
+        VIDEO_DECODE_WIDTH = 87,
+        VIDEO_ENCODE_TIME = 88,
+        VIDEO_DECODE_TIME = 89,
+        VIDEO_HW_ENCODER = 90,
+        VIDEO_HW_DECODER = 91,
     }
 }
 
