@@ -16,6 +16,8 @@ import {
   SdkClientMetricFrame,
   SdkMetric,
   SdkStreamMetricFrame,
+  SdkStreamDimension,
+  SdkDimensionValue,
 } from '../signalingprotocol/SignalingProtocol.js';
 import { Maybe } from '../utils/Types';
 import VideoStreamIndex from '../videostreamindex/VideoStreamIndex';
@@ -325,6 +327,17 @@ export default class StatsCollector {
       metricFrame.value = sourceMetric
         ? transform(sourceMetric, ssrc)
         : transform(metricName, ssrc);
+      if (type === SdkMetric.Type.VIDEO_DECODER_IS_HARDWARE || type === SdkMetric.Type.VIDEO_ENCODER_IS_HARDWARE) {
+        const dimensionFrame = SdkStreamDimension.create();
+        dimensionFrame.type = type === SdkMetric.Type.VIDEO_DECODER_IS_HARDWARE
+          ? SdkStreamDimension.Type.VIDEO_DECODER_NAME
+          : SdkStreamDimension.Type.VIDEO_ENCODER_NAME;
+        const dimensionValue = SdkDimensionValue.create();
+        dimensionValue.stringValue = String(this.clientMetricReport.streamMetricReports[ssrc].currentMetrics[metricName]);
+        dimensionFrame.value = dimensionValue;
+        latestStreamMetricFrame.dimensions.push(dimensionFrame)
+        this.logger.info('[DBG-MSG] sending event message: ' + String(latestStreamMetricFrame));
+      }
       ssrc
         ? latestStreamMetricFrame.metrics.push(metricFrame)
         : clientMetricFrame.globalMetrics.push(metricFrame);
