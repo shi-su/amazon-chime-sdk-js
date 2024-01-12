@@ -209,6 +209,13 @@ export default class ContentShareManager implements ContentShareObserver {
     document.getElementById('content-enable-svc').addEventListener('click', () => {
       this.updateContentSimulcastAndSVCConfigUX();
     });
+
+    // TODO: remove
+    const enableSVCConfig = (document.getElementById('content-svc-config')).style.display === 'block';
+    if (enableSVCConfig) {
+      (document.getElementById('content-enable-svc') as HTMLInputElement).checked = true;
+    }
+ 
     this.updateContentSimulcastAndSVCConfigUX();
 
 

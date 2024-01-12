@@ -29,6 +29,7 @@ import AudioLogEvent from '../statscollector/AudioLogEvent';
 import { Maybe } from '../utils/Types';
 import VideoTileState from '../videotile/VideoTileState';
 import BaseTask from './BaseTask';
+import VideoCodecCapability from '../sdp/VideoCodecCapability';
 
 /*
  * [[MonitorTask]] monitors connections using SignalingAndMetricsConnectionMonitor.
@@ -51,6 +52,11 @@ export default class MonitorTask
   private isResubscribeCheckPaused: boolean = false;
   private pendingMetricsReport: ClientMetricReport | undefined = undefined;
   private isMeetingConnected: boolean = false;
+
+  private continuousSlowFlagCnt: number = 0;
+  static readonly CONTINUOUS_SLOW_FLAG_THRES = 10;
+  static readonly SLOW_ENCODING_THRESHOLD_MS: number = 80;
+  static readonly LIMITATION_REASON_CPU: number = 1;
 
   constructor(
     private context: AudioVideoControllerState,
@@ -200,6 +206,10 @@ export default class MonitorTask
       number,
       StreamMetricReport
     >();
+
+    if (this.context.videoTileController.getLocalVideoTile() !== null) {
+      this.encodingMonitor(clientMetricReport);
+    }
 
     // TODO: move those logic to stats collector.
     for (const ssrc in streamMetricReport) {
@@ -439,4 +449,84 @@ export default class MonitorTask
       poorConnectionCount: this.context.poorConnectionCount,
     };
   };
+
+  private isEncodingSlow(videoMetricReport: {
+    [id: string]: { [id: string]: {} };
+  }): boolean {
+    let cpuLimitationDuration: number = 0;
+    let totalEncodingTimeInMs: number = 0;
+    let isHardwareEncoder: boolean = false;
+
+    for (const attendeeId in videoMetricReport) {
+      const metricData: { [id: string]: { [id: string]: {} } } =
+        videoMetricReport[attendeeId];
+      const streams = metricData ? Object.keys(metricData) : [];
+      if (streams.length === 0) {
+        return false;
+      }
+
+      for (const ssrc of streams) {
+        for (const [metricName, value] of Object.entries(metricData[ssrc])) {
+          if (metricName === 'videoUpstreamTotalEncodeTimePerSecond') {
+            totalEncodingTimeInMs = Math.trunc(Number(value));
+          }
+          if (metricName === 'videoUpstreamEncoderImplementation') {
+            isHardwareEncoder = value as boolean;
+          }
+          if (metricName === 'videoUpstreamCpuQualityLimitationDurationPerSecond') {
+            cpuLimitationDuration = Math.trunc(Number(value));
+          }
+        }
+      }
+    }
+    // this.logger.info(`[DBG-MSG] isEncodingSlow ${cpuLimitationDuration} ${totalEncodingTimeInMs} ${isHardwareEncoder}`);
+    return !isHardwareEncoder
+      && (totalEncodingTimeInMs >= MonitorTask.SLOW_ENCODING_THRESHOLD_MS ||
+        cpuLimitationDuration > 0);
+  }
+
+  private downgradeEncoding(): void {
+    // Downgrade video codec if there are other codec options and current codec is not H264 CBP or VP8
+    if (
+      this.context.meetingSupportedVideoSendCodecPreferences !== undefined 
+      && this.context.meetingSupportedVideoSendCodecPreferences.length > 1
+      && !(this.context.meetingSupportedVideoSendCodecPreferences[0].equals(VideoCodecCapability.h264ConstrainedBaselineProfile())
+      || this.context.meetingSupportedVideoSendCodecPreferences[0].equals(VideoCodecCapability.vp8()))
+    ) {
+      let newMeetingSupportedVideoSendCodecPreferences: VideoCodecCapability[] = [];
+      for (const capability of this.context.videoSendCodecPreferences) {
+        if (!capability.equals(this.context.meetingSupportedVideoSendCodecPreferences[0])) {
+          newMeetingSupportedVideoSendCodecPreferences.push(capability);
+        }
+      }
+      if (newMeetingSupportedVideoSendCodecPreferences.length > 0) {
+        this.logger.info(`Downgrading codec to ${newMeetingSupportedVideoSendCodecPreferences[0].codecName} due to slow encoding`);
+        this.context.meetingSupportedVideoSendCodecPreferences = newMeetingSupportedVideoSendCodecPreferences;
+        this.context.audioVideoController.setVideoCodecSendPreferences(newMeetingSupportedVideoSendCodecPreferences);
+        this.context.statsCollector.videoDegradationDueToEncodingEventDidReceive();
+        return;
+      } else {
+        this.logger.warn('Degrading video codec failed since there is no alternative codec to select');
+      }
+    }
+  }
+
+  private encodingMonitor(clientMetricReport: ClientMetricReport): void {
+    const videoMetricReport = clientMetricReport.getObservableVideoMetrics();
+    const slowEncoding = this.isEncodingSlow(
+      videoMetricReport
+    );
+    this.logger.info(`[DBG-MSG] Video encoding is slow: ${slowEncoding}, consecutive slow encoding: ${this.continuousSlowFlagCnt}`);
+
+    if (slowEncoding) {
+      this.continuousSlowFlagCnt++;
+      if (this.continuousSlowFlagCnt > MonitorTask.CONTINUOUS_SLOW_FLAG_THRES) {
+        this.downgradeEncoding();
+        this.context.statsCollector.videoEncodingHighCpuDidReceive();
+        this.continuousSlowFlagCnt = 0;
+      }
+    } else {
+      this.continuousSlowFlagCnt = 0;
+    }
+  }
 }

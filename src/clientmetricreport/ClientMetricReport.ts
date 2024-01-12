@@ -359,6 +359,14 @@ export default class ClientMetricReport {
       transform: this.averageCpuQualityLimitationDurationPerSecondInMilliseconds,
       type: SdkMetric.Type.VIDEO_QUALITY_LIMITATION_DURATION_CPU,
     },
+    videoDegradationDueToEncoding: {
+      transform: this.identityValue,
+      type: SdkMetric.Type.VIDEO_DEGRADATION_DUE_TO_ENCODING_CPU,
+    },
+    videoEncodingHighCpu: {
+      transform: this.identityValue,
+      type: SdkMetric.Type.VIDEO_ENCODING_HIGH_CPU,
+    },
   };
 
   readonly videoDownstreamMetricMap: {
@@ -527,6 +535,21 @@ export default class ClientMetricReport {
     },
     videoUpstreamRoundTripTimeMs: {
       source: 'roundTripTime',
+      media: MediaType.VIDEO,
+      dir: Direction.UPSTREAM,
+    },
+    videoUpstreamEncoderImplementation: {
+      source: 'encoderImplementation',
+      media: MediaType.VIDEO,
+      dir: Direction.UPSTREAM,
+    },
+    videoUpstreamTotalEncodeTimePerSecond: {
+      source: 'totalEncodeTime',
+      media: MediaType.VIDEO,
+      dir: Direction.UPSTREAM,
+    },
+    videoUpstreamCpuQualityLimitationDurationPerSecond: {
+      source: 'qualityLimitationDurations',
       media: MediaType.VIDEO,
       dir: Direction.UPSTREAM,
     },
@@ -735,6 +758,9 @@ export default class ClientMetricReport {
             this.streamMetricReports[ssrc].direction
           ) {
             const metricValue = this.getObservableVideoMetricValue(metricName, Number(ssrc));
+            // this.logger.error(
+            //   `[DBG-MSG] getObservableVideoMetricValue ${metricName} ${metricValue}`
+            // );
             if (!isNaN(metricValue)) {
               metric[metricName] = metricValue;
             }

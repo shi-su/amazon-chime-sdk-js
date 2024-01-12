@@ -46,6 +46,8 @@ export default class StatsCollector implements RedundantAudioRecoveryMetricsObse
   private clientMetricReport: ClientMetricReport;
   private redRecoveryMetricReport: RedundantAudioRecoveryMetricReport = new RedundantAudioRecoveryMetricReport();
   private lastRedRecoveryMetricReportConsumedTimestampMs: number = 0;
+  private videoEncodingHighCpuCount: number = 0;
+  private videoDegradationDueToEncodingCount: number = 0;
 
   constructor(
     private audioVideoController: AudioVideoController,
@@ -259,6 +261,7 @@ export default class StatsCollector implements RedundantAudioRecoveryMetricsObse
     }
 
     for (const rawMetric in rawMetricReport) {
+      // this.logger.warn(`[DBG-MSG-METRIC] addVideoEncodingCpuMetrics ${rawMetric}`);
       if (rawMetric in metricMap) {
         if (typeof rawMetricReport[rawMetric] === 'number') {
           metricReport.previousMetrics[rawMetric] = metricReport.currentMetrics[rawMetric];
@@ -545,6 +548,7 @@ export default class StatsCollector implements RedundantAudioRecoveryMetricsObse
     // Add custom stats for reporting.
     const customStatsReports: CustomStatsReport[] = [];
     this.maybeAddRedRecoveryMetrics(customStatsReports);
+    this.addVideoEncodingCpuMetrics(customStatsReports);
     this.clientMetricReport.customStatsReports = customStatsReports;
     filteredRawMetricReports.push(...customStatsReports);
 
@@ -617,5 +621,50 @@ export default class StatsCollector implements RedundantAudioRecoveryMetricsObse
     });
 
     this.lastRedRecoveryMetricReportConsumedTimestampMs = this.redRecoveryMetricReport.currentTimestampMs;
+  }
+
+  /**
+   * Receive video degradation event from MonitorTask and increment counter
+   */
+  videoDegradationDueToEncodingEventDidReceive(): void {
+    // this.logger.warn(`[DBG-MSG-METRIC] videoDegradationDueToEncodingEventDidReceive`);
+    this.videoDegradationDueToEncodingCount += 1;
+  }
+
+  /**
+   * Receive high video encoding CPU usage from MonitorTask and increment counter
+   */
+  videoEncodingHighCpuDidReceive(): void {
+    // this.logger.warn(`[DBG-MSG-METRIC] videoEncodingHighCpuDidReceive`);
+    this.videoEncodingHighCpuCount += 1;
+  }
+
+  private getVideoUpstreamSsrc(): number | null {
+    for (const ssrc in this.clientMetricReport.streamMetricReports) {
+      if (
+        this.clientMetricReport.streamMetricReports[ssrc].mediaType === MediaType.VIDEO &&
+        this.clientMetricReport.streamMetricReports[ssrc].direction === Direction.UPSTREAM
+      ) {
+        return Number(ssrc);
+      }
+    }
+    return null;
+  }
+
+  private addVideoEncodingCpuMetrics(customStatsReports: CustomStatsReport[]): void {
+    const videoUpstreamSsrc = this.getVideoUpstreamSsrc();
+    // this.logger.warn(`[DBG-MSG-METRIC] addVideoEncodingCpuMetrics ${videoUpstreamSsrc}`);
+    if (videoUpstreamSsrc !== null) {
+      customStatsReports.push({
+        kind: 'video',
+        type: 'outbound-rtp',
+        ssrc: videoUpstreamSsrc,
+        timestamp: Date.now(),
+        videoDegradationDueToEncoding: this.videoDegradationDueToEncodingCount,
+        videoEncodingHighCpu: this.videoEncodingHighCpuCount
+      });
+    }
+    this.videoDegradationDueToEncodingCount = 0
+    this.videoEncodingHighCpuCount = 0
   }
 }

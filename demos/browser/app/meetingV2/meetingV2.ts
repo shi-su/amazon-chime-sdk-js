@@ -655,6 +655,34 @@ export class DemoMeetingApp
         this.setSimulcastAndSVC();
       });
     }
+
+    // TODO: remove
+    (document.getElementById('videoFeatureSelect') as HTMLInputElement).value = "fhd";
+    (document.getElementById('contentFeatureSelect') as HTMLInputElement).value = "uhd";
+    (document.getElementById('max-attendee-cnt') as HTMLInputElement).value = "25";
+    if (this.defaultBrowserBehavior.supportsScalableVideoCoding()) {
+      (document.getElementById('videoCodecSelect') as HTMLSelectElement).value = "vp9Profile0";
+      (document.getElementById('contentCodecSelect') as HTMLSelectElement).value = "av1Main";
+      (document.getElementById('svc') as HTMLInputElement).checked = true;
+    }
+    (document.getElementById('priority-downlink-policy') as HTMLInputElement).checked = true;
+    const serverSideNetworkAdaption = document.getElementById(
+      'server-side-network-adaption'
+    ) as HTMLSelectElement;
+    const paginationPageSize = document.getElementById(
+      'pagination-page-size'
+    ) as HTMLElement;
+    const paginationTitle = document.getElementById(
+      'pagination-title'
+    ) as HTMLElement;
+    const serverSideNetworkAdaptionTitle = document.getElementById(
+        'server-side-network-adaption-title'
+    ) as HTMLElement;
+    serverSideNetworkAdaption.style.display = 'block';
+    paginationPageSize.style.display = 'block';
+    paginationTitle.style.display = 'block';
+    serverSideNetworkAdaptionTitle.style.display = 'block';
+
     this.setSimulcastAndSVC();
 
     document.getElementById('join-view-only').addEventListener('change', () => {
@@ -3535,6 +3563,7 @@ export class DemoMeetingApp
           this.appliedContentMaxResolution = VideoQualitySettings.VideoResolutionFHD;
       }
     }
+    this.appliedVideoMaxResolution = VideoQualitySettings.VideoResolutionFHD;
 
     if (this.appliedVideoMaxResolution === VideoQualitySettings.VideoDisabled) {
       this.toggleButton('button-camera', 'disabled');
@@ -3939,6 +3968,7 @@ export class DemoMeetingApp
       default:
         this.requestedContentMaxResolution = VideoQualitySettings.VideoResolutionFHD;
     }
+    this.requestedVideoMaxResolution = VideoQualitySettings.VideoResolutionFHD;
 
     const getCodecPreferences = (chosenCodec: string) => {
       // We will always include H.264 CBP and VP8 and fallbacks when those are not the codecs selected, so that
